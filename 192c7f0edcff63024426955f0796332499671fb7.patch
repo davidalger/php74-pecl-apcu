@@ -1,0 +1,25 @@
+From 192c7f0edcff63024426955f0796332499671fb7 Mon Sep 17 00:00:00 2001
+From: Nikita Popov <nikita.ppv@gmail.com>
+Date: Wed, 2 Oct 2019 11:02:10 +0200
+Subject: [PATCH] Use different fatal error in test
+
+This is no longer a fatal error in 7.4...
+---
+ tests/apc_entry_003.phpt | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/tests/apc_entry_003.phpt b/tests/apc_entry_003.phpt
+index 0fd7be4..f066583 100644
+--- a/tests/apc_entry_003.phpt
++++ b/tests/apc_entry_003.phpt
+@@ -9,8 +9,8 @@ apc.enable_cli=1
+ <?php
+ $value = apcu_entry("test", function($key) {
+     // Fatal error
+-    class X implements Y {}
++    class X { use T; }
+ });
+ ?>
+ --EXPECTF--
+-Fatal error: Interface 'Y' not found in %s on line %d
++Fatal error: Trait 'T' not found in %s on line %d
