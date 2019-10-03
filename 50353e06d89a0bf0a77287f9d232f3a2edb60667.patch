@@ -1,0 +1,26 @@
+From 50353e06d89a0bf0a77287f9d232f3a2edb60667 Mon Sep 17 00:00:00 2001
+From: Nikita Popov <nikita.ppv@gmail.com>
+Date: Fri, 7 Jun 2019 10:04:14 +0200
+Subject: [PATCH] Use different fatal error
+
+The string conversion fatal is an exception in 7.4.
+---
+ tests/apc_entry_003.phpt | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/tests/apc_entry_003.phpt b/tests/apc_entry_003.phpt
+index ef8ace9..0fd7be4 100644
+--- a/tests/apc_entry_003.phpt
++++ b/tests/apc_entry_003.phpt
+@@ -8,8 +8,9 @@ apc.enable_cli=1
+ --FILE--
+ <?php
+ $value = apcu_entry("test", function($key) {
+-    (string) new stdClass;
++    // Fatal error
++    class X implements Y {}
+ });
+ ?>
+ --EXPECTF--
+-%s fatal error: Object of class stdClass could not be converted to string in %s on line %d
++Fatal error: Interface 'Y' not found in %s on line %d
