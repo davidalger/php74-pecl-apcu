@@ -16,15 +16,12 @@
 
 Name:           php-pecl-apcu
 Summary:        APC User Cache
-Version:        5.1.17
-Release:        3%{?dist}
+Version:        5.1.18
+Release:        1%{?dist}
 Source0:        http://pecl.php.net/get/%{pecl_name}-%{version}.tgz
 Source1:        %{pecl_name}.ini
 Source2:        %{pecl_name}-panel.conf
 Source3:        %{pecl_name}.conf.php
-
-Patch0:         https://github.com/krakjoe/apcu/commit/50353e06d89a0bf0a77287f9d232f3a2edb60667.patch
-Patch1:         https://github.com/krakjoe/apcu/commit/192c7f0edcff63024426955f0796332499671fb7.patch
 
 License:        PHP
 URL:            http://pecl.php.net/package/APCu
@@ -87,9 +84,6 @@ mv %{pecl_name}-%{version} NTS
 sed -e '/LICENSE/s/role="doc"/role="src"/' -i package.xml
 
 cd NTS
-%patch0 -p1
-%patch1 -p1
-
 # Sanity check, really often broken
 extver=$(sed -n '/#define PHP_APCU_VERSION/{s/.* "//;s/".*$//;p}' php_apc.h)
 if test "x${extver}" != "x%{version}"; then
@@ -221,6 +215,9 @@ REPORT_EXIT_STATUS=1 \
 
 
 %changelog
+* Mon Oct 28 2019 Remi Collet <remi@remirepo.net> - 5.1.18-1
+- update to 5.1.18
+
 * Thu Oct 03 2019 Remi Collet <remi@remirepo.net> - 5.1.17-3
 - rebuild for https://fedoraproject.org/wiki/Changes/php74
 - add upstream patches for test suite
