@@ -1,3 +1,5 @@
+# IUS spec file for php74-pecl-apcu, forked from:
+#
 # Fedora spec file for php-pecl-apcu
 #
 # Copyright (c) 2013-2019 Remi Collet
@@ -13,22 +15,24 @@
 %global pecl_name apcu
 %global with_zts  0%{?__ztsphp:1}
 %global ini_name  40-%{pecl_name}.ini
+%global php       php74
 
-Name:           php-pecl-apcu
+Name:           %{php}-pecl-%{pecl_name}
 Summary:        APC User Cache
 Version:        5.1.18
 Release:        2%{?dist}
-Source0:        http://pecl.php.net/get/%{pecl_name}-%{version}.tgz
+Source0:        https://pecl.php.net/get/%{pecl_name}-%{version}.tgz
 Source1:        %{pecl_name}.ini
 Source2:        %{pecl_name}-panel.conf
 Source3:        %{pecl_name}.conf.php
 
 License:        PHP
-URL:            http://pecl.php.net/package/APCu
+URL:            https://pecl.php.net/package/APCu
 
 BuildRequires:  gcc
-BuildRequires:  php-devel > 7
-BuildRequires:  php-pear
+# build require pear1's dependencies to avoid mismatched php stacks
+BuildRequires:  pear1 %{php}-cli %{php}-common %{php}-xml
+BuildRequires:  %{php}-devel
 BuildRequires:  pcre-devel
 
 Requires:       php(zend-abi) = %{php_zend_api}
@@ -39,6 +43,11 @@ Provides:       php-apcu = %{version}
 Provides:       php-apcu%{?_isa} = %{version}
 Provides:       php-pecl(apcu) = %{version}
 Provides:       php-pecl(apcu)%{?_isa} = %{version}
+
+# safe replacement
+Provides:       php-pecl-%{pecl_name} = %{version}-%{release}
+Provides:       php-pecl-%{pecl_name}%{?_isa} = %{version}-%{release}
+Conflicts:      php-pecl-%{pecl_name} < %{version}-%{release}
 
 
 %description
@@ -53,26 +62,36 @@ in replacement for APC.
 %package devel
 Summary:       APCu developer files (header)
 Requires:      %{name}%{?_isa} = %{version}-%{release}
-Requires:      php-devel%{?_isa}
+Requires:      %{php}-devel%{?_isa}
 Obsoletes:     php-pecl-apc-devel < 4
 Provides:      php-pecl-apc-devel = %{version}-%{release}
 Provides:      php-pecl-apc-devel%{?_isa} = %{version}-%{release}
+
+# safe replacement
+Provides:      php-pecl-%{pecl_name}-devel = %{version}-%{release}
+Provides:      php-pecl-%{pecl_name}-devel%{?_isa} = %{version}-%{release}
+Conflicts:     php-pecl-%{pecl_name}-devel < %{version}-%{release}
+
 
 %description devel
 These are the files needed to compile programs using APCu.
 
 
-%package -n apcu-panel
+%package panel
 Summary:       APCu control panel
 BuildArch:     noarch
 Requires:      %{name} = %{version}-%{release}
-Requires:      php(httpd)
-Requires:      php-gd
+Requires:      mod_%{php}
+Requires:      %{php}-gd
 Requires:      httpd
 Obsoletes:     apc-panel < 4
 Provides:      apc-panel = %{version}-%{release}
 
-%description -n apcu-panel
+# safe replacement
+Provides:      apcu-panel = %{version}-%{release}
+Conflicts:     apcu-panel < %{version}-%{release}
+
+%description panel
 This package provides the APCu control panel, with Apache
 configuration, available on http://localhost/apcu-panel/
 
@@ -108,7 +127,7 @@ cd NTS
 %configure \
    --enable-apcu \
    --with-php-config=%{_bindir}/php-config
-make %{?_smp_mflags}
+%make_build
 
 %if %{with_zts}
 cd ../ZTS
@@ -116,7 +135,7 @@ cd ../ZTS
 %configure \
    --enable-apcu \
    --with-php-config=%{_bindir}/zts-php-config
-make %{?_smp_mflags}
+%make_build
 %endif
 
 
@@ -132,7 +151,7 @@ install -D -m 644 %{SOURCE1} %{buildroot}%{php_ztsinidir}/%{ini_name}
 %endif
 
 # Install the package XML file
-install -D -m 644 package.xml %{buildroot}%{pecl_xmldir}/%{name}.xml
+install -D -m 644 package.xml %{buildroot}%{pecl_xmldir}/%{pecl_name}.xml
 
 # Install the Control Panel
 # Pages
@@ -183,10 +202,28 @@ REPORT_EXIT_STATUS=1 \
 %endif
 
 
+%triggerin -- pear1
+if [ -x %{__pecl} ]; then
+    %{pecl_install} %{pecl_xmldir}/%{pecl_name}.xml >/dev/null || :
+fi
+
+
+%posttrans
+if [ -x %{__pecl} ]; then
+    %{pecl_install} %{pecl_xmldir}/%{pecl_name}.xml >/dev/null || :
+fi
+
+
+%postun
+if [ $1 -eq 0 -a -x %{__pecl} ]; then
+    %{pecl_uninstall} %{pecl_name} >/dev/null || :
+fi
+
+
 %files
 %license NTS/LICENSE
 %doc %{pecl_docdir}/%{pecl_name}
-%{pecl_xmldir}/%{name}.xml
+%{pecl_xmldir}/%{pecl_name}.xml
 
 %config(noreplace) %{php_inidir}/%{ini_name}
 %{php_extdir}/%{pecl_name}.so
@@ -206,7 +243,7 @@ REPORT_EXIT_STATUS=1 \
 %endif
 
 
-%files -n apcu-panel
+%files panel
 # Need to restrict access, as it contains a clear password
 %attr(550,apache,root) %dir %{_sysconfdir}/apcu-panel
 %config(noreplace) %{_sysconfdir}/apcu-panel/conf.php
@@ -215,6 +252,9 @@ REPORT_EXIT_STATUS=1 \
 
 
 %changelog
+* Thu Jun 04 2020 David Alger <davidmalger@gmail.com> - 5.1.18-2
+- Port from Fedora to IUS
+
 * Thu Jan 30 2020 Fedora Release Engineering <releng@fedoraproject.org> - 5.1.18-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_32_Mass_Rebuild
 
